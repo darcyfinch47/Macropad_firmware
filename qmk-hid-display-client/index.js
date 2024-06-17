@@ -1,5 +1,6 @@
 const HID = require('node-hid');
 const loudness = require('loudness');
+var os = require('os-utils');
 
 const KEYBOARD_NAME = "keeb_proto"; // Example product ID
 const KEYBOARD_USAGE_ID =  0x61; // 97 for rawhid
@@ -7,6 +8,8 @@ const KEYBOARD_USAGE_PAGE = 0xFF60; // 65376 for rawhid
 const KEYBOARD_UPDATE_TIME = 1000;
 let keyboard = null;
 let volume = 0;
+let cpu = 0;
+let memory = 0;
 
 function updateKeyboardScreen() {
     if (!keyboard) {
@@ -23,6 +26,12 @@ function updateKeyboardScreen() {
     
     if (keyboard) {
         getSystemVolume();
+        os.cpuUsage(function(v){
+            cpu = Math.round(v*1000);
+        });
+
+        memory = Math.round(100 - os.freememPercentage()*100);
+
         try {
             // Listen for data from the keyboard which indicates the screen to show
             // keyboard.on('data', (e) => {
@@ -30,12 +39,14 @@ function updateKeyboardScreen() {
             // });
 
             // Send the report
-            const text = "Meow"; // Text you want to send
+            const text = "Demo"; // Text you want to send
             const textBuffer = Buffer.from(text, 'utf8');
-            const report = [0, 2, ...textBuffer];
+            const report = [0, 4, ...textBuffer];
 
             keyboard.write(report);
             keyboard.write([0, 1, volume]);
+            keyboard.write([0, 2, cpu]);
+            keyboard.write([0, 3, memory]);
             //console.log('Report sent');
         } catch {
             console.log("failed")

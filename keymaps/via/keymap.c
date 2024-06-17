@@ -40,18 +40,25 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 // HID input
 bool is_hid_connected = false; // Flag indicating if we have a PC connection yet
 char screen_data_buffer[64] = {0}; // Buffer to store received text
-uint8_t received_number = 0; // Variable to store received number
+uint8_t volume = 0; // Variable to store received number
+uint8_t cpu = 0; // Variable to store received number
+uint8_t memory = 0; // Variable to store received number
 
 bool via_command_kb(uint8_t *data, uint8_t length) {
     uint8_t *command_id = &(data[0]);
+    is_hid_connected = true;
 
     switch (*command_id) {
         case 1:
-            is_hid_connected = true;
-            received_number = data[1];
+            volume = data[1];
             break;
         case 2:
-            is_hid_connected = true;
+            cpu = data[1];
+            break;
+        case 3:
+            memory = data[1];
+            break;
+        case 4:
             snprintf(screen_data_buffer, sizeof(screen_data_buffer), "%s", (char *)&data[1]);
             break;
     }
@@ -69,19 +76,30 @@ bool oled_task_user() {
     if (is_hid_connected) {
         oled_write_ln("Link!", true);
 
-        // Display the received number
+        // Display the Volume
+        char volume_str[16];
+        snprintf(volume_str, sizeof(volume_str), "%u", volume);
         oled_set_cursor(0, 2);
-        char number_str[16];
-        if (received_number == 100) {
-            snprintf(number_str, sizeof(number_str), "V:%u", received_number);
-        } else if (received_number < 10){
-            snprintf(number_str, sizeof(number_str), "V:  %u", received_number);
-        } else {
-            snprintf(number_str, sizeof(number_str), "V: %u", received_number);
-        }
-        oled_write_ln(number_str, false);
+        oled_write_ln("VOL:", false);
+        oled_set_cursor(3, 3);
+        oled_write_ln(volume_str, false);
 
-        oled_set_cursor(0, 4);
+        char cpu_str[16];
+        snprintf(cpu_str, sizeof(cpu_str), "%u", cpu);
+        oled_set_cursor(0, 5);
+        oled_write_ln("CPU:", false);
+        oled_set_cursor(3, 6);
+        oled_write_ln(cpu_str, false);
+
+        char memory_str[16];
+        snprintf(memory_str, sizeof(memory_str), "%u", memory);
+        oled_set_cursor(0, 8);
+        oled_write_ln("MEM:", false);
+        oled_set_cursor(3, 9);
+        oled_write_ln(memory_str, false);
+
+
+        oled_set_cursor(0, 15);
         oled_write_ln(screen_data_buffer, false);
     } else {
         oled_write_ln("Hi!", false);
