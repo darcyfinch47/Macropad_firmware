@@ -43,6 +43,7 @@ char screen_data_buffer[64] = {0}; // Buffer to store received text
 uint8_t volume = 0; // Variable to store received number
 uint8_t cpu = 0; // Variable to store received number
 uint8_t memory = 0; // Variable to store received number
+bool rotation = false;
 
 bool via_command_kb(uint8_t *data, uint8_t length) {
     uint8_t *command_id = &(data[0]);
@@ -67,40 +68,57 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) { 
-    return OLED_ROTATION_270; 
+    if (rotation) {
+        return OLED_ROTATION_270; 
+    } else {
+        return OLED_ROTATION_180; 
+    }
 }
 
 // Used to draw on to the oled screen
 bool oled_task_user() {            
     oled_set_cursor(0, 0);
     if (is_hid_connected) {
-        oled_write_ln("Link!", true);
-
-        // Display the Volume
         char volume_str[16];
         snprintf(volume_str, sizeof(volume_str), "%u", volume);
-        oled_set_cursor(0, 2);
-        oled_write_ln("VOL:", false);
-        oled_set_cursor(3, 3);
-        oled_write_ln(volume_str, false);
-
         char cpu_str[16];
         snprintf(cpu_str, sizeof(cpu_str), "%u", cpu);
-        oled_set_cursor(0, 5);
-        oled_write_ln("CPU:", false);
-        oled_set_cursor(3, 6);
-        oled_write_ln(cpu_str, false);
-
         char memory_str[16];
         snprintf(memory_str, sizeof(memory_str), "%u", memory);
-        oled_set_cursor(0, 8);
-        oled_write_ln("MEM:", false);
-        oled_set_cursor(3, 9);
-        oled_write_ln(memory_str, false);
+        
+        if (rotation) {
+            oled_write_ln("Link!", true);
 
+            // Display the Volume
+            oled_set_cursor(0, 2);
+            oled_write_ln("VOL:", false);
+            oled_set_cursor(3, 3);
+            oled_write_ln(volume_str, false);
+            
+            oled_set_cursor(0, 5);
+            oled_write_ln("CPU:", false);
+            oled_set_cursor(3, 6);
+            oled_write_ln(cpu_str, false);
 
-        oled_set_cursor(0, 15);
-        oled_write_ln(screen_data_buffer, false);
+            oled_set_cursor(0, 8);
+            oled_write_ln("MEM:", false);
+            oled_set_cursor(3, 9);
+            oled_write_ln(memory_str, false);
+
+            oled_set_cursor(0, 15);
+            oled_write_ln(screen_data_buffer, false);
+        } else {
+            oled_write_ln("Linked!", true);
+            // Display the Volume
+            oled_set_cursor(0, 2);
+            oled_write_ln("VOL:  CPU:  MEM:", false);
+            // Buffer to hold the formatted string
+            char buffer[100]; // Adjust size as needed
+            
+            // Format the string using sprintf
+            sprintf(buffer, "   %d     %d     %d", volume, cpu, memory);
+            oled_write_ln(buffer, false);
+            
     } else {
         oled_write_ln("Hi!", false);
     }
